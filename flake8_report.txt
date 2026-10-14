@@ -1,1 +1,0 @@
-auction_system.py:91:80: E501 line too long (82 > 79 characters)

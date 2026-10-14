@@ -8,11 +8,9 @@ from datetime import datetime
 from jinja2 import Environment
 from markupsafe import escape
 
-PAYMENT_GATEWAY = "https://pay.auction.example/RPC2"
 MIN_INCREMENT = 100
 
 
-# pylint: disable=too-many-instance-attributes
 class Auction:
     """Represent a single auction item and its bid history."""
 
@@ -23,8 +21,21 @@ class Auction:
         self.reserve_price = reserve_price
         self.ends_at = self._parse_datetime(ends_at)
         self.bids = []
-        self.highest_bid = 0
-        self.leader = None
+        self.leading_bid = None
+
+    @property
+    def highest_bid(self):
+        """Return the latest accepted leading bid amount, or zero."""
+        if self.leading_bid is None:
+            return 0
+        return self.leading_bid[1]
+
+    @property
+    def leader(self):
+        """Return the bidder attached to the latest accepted leading bid."""
+        if self.leading_bid is None:
+            return None
+        return self.leading_bid[0]
 
     @staticmethod
     def _parse_datetime(value):
@@ -38,12 +49,13 @@ class Auction:
         if bidder == self.seller:
             raise ValueError("Seller cannot bid on own auction")
 
-        if (
-            isinstance(amount, bool)
-            or not isinstance(amount, (int, float))
-            or not math.isfinite(amount)
-            or amount <= 0
-        ):
+        if isinstance(amount, bool) or not isinstance(amount, (int, float)):
+            raise ValueError("Bid amount must be a positive finite number")
+        try:
+            finite_amount = math.isfinite(amount)
+        except OverflowError:
+            finite_amount = False
+        if not finite_amount or amount <= 0:
             raise ValueError("Bid amount must be a positive finite number")
 
         bid_time = self._parse_datetime(at)
@@ -56,9 +68,8 @@ class Auction:
                 "minimum increment"
             )
 
-        self.bids.append((bidder, amount, bid_time))
-        self.highest_bid = amount
-        self.leader = bidder
+        self.leading_bid = (bidder, amount, bid_time)
+        self.bids.append(self.leading_bid)
         return True
 
     def winner(self):
@@ -122,7 +133,7 @@ def bidder_badge(name):
 
 
 def charge_winner(item_id):
-    """Return charge information for the winner without unsafe XML handling."""
+    """Simulate a winner charge; this function does not contact a gateway."""
     auction = auctions[item_id]
     winner = auction.winner()
     if winner is None:
@@ -130,8 +141,8 @@ def charge_winner(item_id):
     return {
         "winner": winner,
         "amount": auction.final_price(),
-        "gateway": PAYMENT_GATEWAY,
-        "status": "charged",
+        "status": "simulated",
+        "message": "No payment was processed.",
     }
 
 
@@ -180,13 +191,13 @@ def main():
         "2026-12-01 18:00",
     )
 
-    print("Asha bids 3000:", bid("LOT1", "asha", 3000, "2026-12-01 10:00"))
+    print("Asha bids 3000:", bid("LOT1", "asha", 3000, "2026-12-01 08:00"))
     print("Ben bids 3000 (same amount):",
-          bid("LOT1", "ben", 3000, "2026-12-01 10:05"))
+          bid("LOT1", "ben", 3000, "2026-12-01 08:05"))
     print("Asha bids 3050 (+50):",
-          bid("LOT1", "asha", 3050, "2026-12-01 10:10"))
+          bid("LOT1", "asha", 3050, "2026-12-01 08:10"))
     print("Seller bids on own item:",
-          bid("LOT1", "seller_sam", 4000, "2026-12-01 11:00"))
+          bid("LOT1", "seller_sam", 4000, "2026-12-01 09:00"))
     print("Bid at 9:30 AM (before 18:00 close):",
           bid("LOT1", "dev", 4500, "2026-12-01 9:30"))
     print("Late bid (next day):",

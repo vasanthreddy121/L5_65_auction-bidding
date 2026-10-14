@@ -6,6 +6,7 @@ import auction_system
 from auction_system import (
     bidder_badge,
     bid,
+    charge_winner,
     create_auction,
     render_listing,
     top_bidders,
@@ -59,6 +60,12 @@ class AuctionBiddingTests(unittest.TestCase):
         """Only positive bid amounts can be recorded."""
         self.assertFalse(bid("LOT", "asha", 0, "2026-12-01 10:00"))
         self.assertFalse(bid("LOT", "asha", -1, "2026-12-01 10:00"))
+        self.assertFalse(
+            bid("LOT", "asha", float("inf"), "2026-12-01 10:00")
+        )
+        self.assertFalse(
+            bid("LOT", "asha", 10**1000, "2026-12-01 10:00")
+        )
         self.assertEqual(self.auction.bids, [])
 
     def test_bid_before_close_is_accepted_and_late_bid_is_rejected(self):
@@ -98,6 +105,18 @@ class AuctionBiddingTests(unittest.TestCase):
         self.assertNotIn("<script>", listing)
         self.assertIn("&lt;img", badge)
         self.assertNotIn("<img", badge)
+
+    def test_charge_winner_is_explicitly_a_simulation(self):
+        """The demo never represents a simulated charge as a real payment."""
+        self.assertTrue(bid("LOT", "asha", 5000, "2026-12-01 10:00"))
+        result = charge_winner("LOT")
+        self.assertEqual(result["status"], "simulated")
+        self.assertEqual(result["message"], "No payment was processed.")
+
+    def test_charge_winner_has_no_result_for_unsold_auction(self):
+        """An unsold auction cannot simulate a winner charge."""
+        self.assertTrue(bid("LOT", "asha", 3000, "2026-12-01 10:00"))
+        self.assertFalse(charge_winner("LOT"))
 
 
 if __name__ == "__main__":

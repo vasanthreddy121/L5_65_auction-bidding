@@ -7,9 +7,9 @@ Follow the lab handout for the full instructions.
 
 ## About the program
 
-An online auction and bidding system. An `Auction` class tracks reserve prices and closing times; the program accepts bids, picks the winner and final price (with a buyer's premium), lists top bidders, renders HTML listings and bidder badges, exports bids and calls a payment gateway to charge the winner.
+An online auction and bidding system. An `Auction` class tracks reserve prices and closing times; the program accepts bids, picks the winner and final price (with a buyer's premium), lists top bidders, renders HTML listings and bidder badges, and exports bids. `charge_winner()` is an educational simulation only: it returns a simulated status for a sold auction and does not contact a payment gateway or transfer money.
 
-The code works, but only just. It has quality, style and security problems of the kind Pylint, Flake8 and Bandit are built to find.
+The lab starts from an auction program with quality, style, logic, and security problems of the kind Pylint, Flake8, and Bandit are built to find. The deliverables document the issues, fixes, and verification results.
 
 ## What to do
 
@@ -42,6 +42,12 @@ The code works, but only just. It has quality, style and security problems of th
 5. **Fix the code.** Fix at least 4 of the issues you documented, then rerun all three tools to confirm they are gone. Repeat until you are satisfied. The program should still do its job when you are done.
 
 6. **Reflect.** Answer the four reflection questions from the handout in `reflection.md`.
+
+7. **Run regression tests:**
+   ```bash
+   python -m unittest -v test_auction_system
+   ```
+   The tests cover bid acceptance and rejection, reserve-price outcomes, closing-time handling, bidder rankings, empty auctions, and HTML escaping.
 
 ## Deliverables
 
