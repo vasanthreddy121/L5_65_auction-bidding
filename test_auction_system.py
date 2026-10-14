@@ -107,14 +107,19 @@ class AuctionBiddingTests(unittest.TestCase):
         self.assertNotIn("<img", badge)
 
     def test_charge_winner_is_explicitly_a_simulation(self):
-        """The demo never represents a simulated charge as a real payment."""
+        """Verify the payment demonstration does not claim a real charge."""
         self.assertTrue(bid("LOT", "asha", 5000, "2026-12-01 10:00"))
         result = charge_winner("LOT")
+        self.assertIsInstance(result, dict)
         self.assertEqual(result["status"], "simulated")
+        self.assertNotEqual(result.get("status"), "charged")
         self.assertEqual(result["message"], "No payment was processed.")
+        self.assertEqual(result["winner"], "asha")
+        self.assertEqual(result["amount"], 5250)
+        self.assertNotIn("gateway", result)
 
     def test_charge_winner_has_no_result_for_unsold_auction(self):
-        """An unsold auction cannot simulate a winner charge."""
+        """An unsold auction cannot simulate a winner payment."""
         self.assertTrue(bid("LOT", "asha", 3000, "2026-12-01 10:00"))
         self.assertFalse(charge_winner("LOT"))
 

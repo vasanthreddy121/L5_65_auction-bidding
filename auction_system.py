@@ -79,7 +79,7 @@ class Auction:
         return self.leader
 
     def final_price(self):
-        """Return the final charge with buyer's premium, if sold."""
+        """Return the final price with buyer's premium, if sold."""
         if self.winner() is None:
             return 0
         return round(self.highest_bid * 1.05, 2)
@@ -133,7 +133,7 @@ def bidder_badge(name):
 
 
 def charge_winner(item_id):
-    """Simulate a winner charge; this function does not contact a gateway."""
+    """Simulate a winner payment demonstration without contacting a gateway."""
     auction = auctions[item_id]
     winner = auction.winner()
     if winner is None:
