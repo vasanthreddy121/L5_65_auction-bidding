@@ -42,10 +42,15 @@ class Auction:
         """Parse a datetime passed as a string or object."""
         if isinstance(value, datetime):
             return value
+        if not isinstance(value, str):
+            raise TypeError("Timestamp must be a string or datetime object")
         return datetime.strptime(value, "%Y-%m-%d %H:%M")
 
     def place_bid(self, bidder, amount, at):
         """Record a valid bid, including bids that have not met the reserve."""
+        if not isinstance(bidder, str) or not bidder.strip():
+            raise ValueError("Bidder must be a non-empty string")
+
         if bidder == self.seller:
             raise ValueError("Seller cannot bid on own auction")
 
@@ -98,13 +103,18 @@ def bid(item_id, bidder, amount, at):
     """Submit a bid while converting invalid actions into False."""
     try:
         return auctions[item_id].place_bid(bidder, amount, at)
-    except (TypeError, ValueError):
+    except (KeyError, TypeError, ValueError):
         return False
 
 
 def top_bidders(item_id, n=3):
     """Return the unique top bidder names in descending bid order."""
-    auction = auctions[item_id]
+    try:
+        auction = auctions[item_id]
+    except (KeyError, TypeError):
+        return []
+    if not isinstance(n, int) or n <= 0:
+        return []
     ordered = sorted(
         auction.bids,
         key=lambda bid_info: bid_info[1],
@@ -119,22 +129,29 @@ def top_bidders(item_id, n=3):
 
 def render_listing(item_id):
     """Render the auction listing with Jinja2 HTML escaping enabled."""
+    try:
+        auction = auctions[item_id]
+    except (KeyError, TypeError):
+        return ""
     env = Environment(autoescape=True)
     template = env.from_string(
         "<h2>{{ a.title }}</h2><p>Current bid: Rs.{{ a.highest_bid }}</p>"
     )
-    return template.render(a=auctions[item_id])
+    return template.render(a=auction)
 
 
 def bidder_badge(name):
     """Return a safe bidder badge string."""
-    safe_name = escape(name)
+    safe_name = escape(str(name))
     return f"<span class='bidder'>{safe_name}</span>"
 
 
 def charge_winner(item_id):
     """Simulate a winner payment demonstration without contacting a gateway."""
-    auction = auctions[item_id]
+    try:
+        auction = auctions[item_id]
+    except (KeyError, TypeError):
+        return False
     winner = auction.winner()
     if winner is None:
         return False
@@ -148,7 +165,10 @@ def charge_winner(item_id):
 
 def export_bids(item_id):
     """Export bids as JSON."""
-    auction = auctions[item_id]
+    try:
+        auction = auctions[item_id]
+    except (KeyError, TypeError):
+        return json.dumps([])
     rows = [
         {
             "bidder": bidder,
@@ -162,7 +182,10 @@ def export_bids(item_id):
 
 def seconds_left(item_id):
     """Return the remaining time in seconds for the auction."""
-    auction = auctions[item_id]
+    try:
+        auction = auctions[item_id]
+    except (KeyError, TypeError):
+        return 0
     end = auction.ends_at
     return int(end.timestamp() - time.time())
 

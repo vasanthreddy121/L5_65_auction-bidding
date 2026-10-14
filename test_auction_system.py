@@ -8,7 +8,9 @@ from auction_system import (
     bid,
     charge_winner,
     create_auction,
+    export_bids,
     render_listing,
+    seconds_left,
     top_bidders,
 )
 
@@ -122,6 +124,34 @@ class AuctionBiddingTests(unittest.TestCase):
         """An unsold auction cannot simulate a winner payment."""
         self.assertTrue(bid("LOT", "asha", 3000, "2026-12-01 10:00"))
         self.assertFalse(charge_winner("LOT"))
+
+    def test_invalid_auction_ids_handled_safely(self):
+        """Operations on non-existent auction IDs degrade safely."""
+        self.assertFalse(bid("MISSING", "asha", 5000, "2026-12-01 10:00"))
+        self.assertFalse(charge_winner("MISSING"))
+        self.assertEqual(top_bidders("MISSING"), [])
+        self.assertEqual(render_listing("MISSING"), "")
+        self.assertEqual(export_bids("MISSING"), "[]")
+        self.assertEqual(seconds_left("MISSING"), 0)
+        # Unhashable / unexpected auction ID types
+        self.assertFalse(bid([], "asha", 5000, "2026-12-01 10:00"))
+        self.assertFalse(charge_winner([]))
+        self.assertEqual(top_bidders([]), [])
+        self.assertEqual(render_listing([]), "")
+        self.assertEqual(export_bids([]), "[]")
+        self.assertEqual(seconds_left([]), 0)
+
+    def test_unexpected_input_types_rejected(self):
+        """Malformed bidder names, counts, and times are rejected safely."""
+        self.assertFalse(bid("LOT", "", 5000, "2026-12-01 10:00"))
+        self.assertFalse(bid("LOT", "   ", 5000, "2026-12-01 10:00"))
+        self.assertFalse(bid("LOT", None, 5000, "2026-12-01 10:00"))
+        self.assertFalse(bid("LOT", 1234, 5000, "2026-12-01 10:00"))
+        self.assertFalse(bid("LOT", "asha", 5000, None))
+        self.assertFalse(bid("LOT", "asha", 5000, 12345))
+        self.assertEqual(top_bidders("LOT", n=0), [])
+        self.assertEqual(top_bidders("LOT", n=-1), [])
+        self.assertEqual(top_bidders("LOT", n="two"), [])
 
 
 if __name__ == "__main__":

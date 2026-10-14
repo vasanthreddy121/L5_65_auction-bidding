@@ -47,7 +47,7 @@ The lab starts from an auction program with quality, style, logic, and security 
    ```bash
    python -m unittest -v test_auction_system
    ```
-   The tests cover bid acceptance and rejection, reserve-price outcomes, closing-time handling, bidder rankings, empty auctions, and HTML escaping.
+   The tests cover bid acceptance and rejection, reserve-price outcomes, closing-time handling, bidder rankings, empty auctions, HTML escaping, simulated payment safety, and invalid auction IDs.
 
 ## Deliverables
 
